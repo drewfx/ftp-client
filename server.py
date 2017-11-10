@@ -13,8 +13,8 @@ data = ""
 
 # Forever accept incoming connections
 while 1:
-    #Accept a connection
-    connectionSocket , addr = serverSocket.accept();
+    # Accept a connection
+    connectionSocket, addr = serverSocket.accept();
 
     # Receive data
     data = connectionSocket.recv(40)
