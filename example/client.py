@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Client
 from socket import *
 
@@ -8,6 +9,7 @@ clientSocket = socket(AF_INET, SOCK_STREAM)
 
 data = "Hello world! This is some stuff"
 
-clientSocket.send(data)
+while bytesSent != len(data):
+    bytesSent += clientSocket.send(data[bytesSent :])
 
 clientSocket.close();

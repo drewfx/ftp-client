@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Server
 from socket import *
 
@@ -14,11 +15,14 @@ data = ""
 # Forever accept incoming connections
 while 1:
     # Accept a connection
-    connectionSocket, addr = serverSocket.accept();
+    connectionSocket, addr = serverSocket.accept()
+    tempBuffer = ""
+    data = ""
 
-    # Receive data
-    data = connectionSocket.recv(40)
+    while len(data) != 40:
+        # Receive data
+        tempBuffer = connectionSocket.recv(40)
+        data += tempBuffer
 
     print data
-
-    connectionSocket.close();
+    connectionSocket.close()
