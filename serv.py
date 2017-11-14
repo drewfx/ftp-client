@@ -4,49 +4,71 @@ import sys
 import commands
 
 
-def run(serve_port):
+def run(cli_args):
     """Start our FTP server and
     Listen for client connections.
+    :type cli_args user input arguments
     """
-    print_help()
-    server_connection = initialize(serve_port)
-    listen(server_connection)
+    port = check_input(cli_args)
+    ftp_socket = initialize(port)
+    listen(ftp_socket)
 
 
-def initialize(serve_port):
+def check_input(cli_args):
+    """Check user input to start the server for correct
+    number of parameters.
+    :type cli_args user input
+    :rtype cli_args[port]
+    """
+    arg_length = len(cli_args)
+    if arg_length == 2:
+        return cli_args[1]
+    else:
+        if arg_length == 1:
+            sys.exit("Argument Exception: You are missing the socket parameter.\n")
+        if arg_length > 2:
+            sys.exit("Argument Exception: Your arguments exceed the the required parameters.\n")
+        initialization_prompt()
+
+
+def initialize(port):
     """Server initialization
-    :type serve_port
+    :type port string
+    :rtype ftp_socket socket._socketobject
     """
     try:
-        server_port = int(serve_port)
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_socket.bind(('', server_port))
-        server_socket.listen(1)
+        server_port = int(port)
+        ftp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        ftp_socket.bind(('', server_port))
+        ftp_socket.listen(1)
         print "Server has been initialized, listening on port " + str(server_port)
     except socket.error as serr:
         raise serr
-    return socket
+    return ftp_socket
 
 
-def listen():
-    """Listen for clients"""
+def listen(ftp_socket):
+    """Listen for clients
+    :type ftp_socket int
+    """
     while 1:
-
         print("Accepted connection from client")
+        break;
+    ftp_socket.close();
 
 
 
 def print_help():
     """Print instructions"""
-    help = "#####################" \
-           "#    FTP COMMANDS   #\n" \
-           "#####################\n" \
+    help = "###############################\n" \
+           "#         FTP COMMANDS        #\n" \
+           "###############################\n" \
            "help: print help\n" \
-           "get: download file <file_name>\n" \
-           "put: upload file<file_name>\n" \
+           "get <filename>: downloads a file <file_name>\n" \
+           "put <filename>: uploads a file <file_name>\n" \
            "ls: lists directory\n" \
-           "quit: disconnects from the server\n" \
-    print(help)
+           "quit: disconnects from the server\n"
+    print help
 
 
 def initialization_prompt():
@@ -56,13 +78,4 @@ def initialization_prompt():
 
 # Run
 if __name__ == '__main__':
-    args = sys.argv
-    arg_length = len(args)
-    if arg_length == 2:
-        run(args[1])
-    else:
-        if arg_length == 1:
-            raise ValueError("Argument Exception: You are missing the socket parameter.\n")
-        if arg_length > 2:
-            raise ValueError("Argument Exception: Your arguments exceed the the required parameters.\n")
-        initialization_prompt()
+    run(sys.argv)
