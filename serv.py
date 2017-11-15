@@ -49,13 +49,12 @@ def initialize(port):
 
 def listen(ftp_socket):
     """Listen for clients
-    :type ftp_socket int
+    :type ftp_socket socket.socket
     """
     while 1:
-        print("Accepted connection from client")
-        break;
-    ftp_socket.close();
-
+        print "Accepted connection from client"
+        break
+    ftp_socket.close()
 
 
 def print_help():
@@ -73,7 +72,7 @@ def print_help():
 
 def initialization_prompt():
     """Print initialization prompt in case too few arguments passed"""
-    print("Example usage: python serv.py <port number>")
+    print "Example usage: python serv.py <port number>"
 
 
 # Run
