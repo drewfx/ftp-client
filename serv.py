@@ -41,9 +41,10 @@ def initialize(port):
         ftp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         ftp_socket.bind(('', server_port))
         ftp_socket.listen(1)
-        print "Server has been initialized, listening on port " + str(server_port)
-    except socket.error as serr:
-        raise serr
+        print "Server has been initialized, listening on port %s" % str(server_port)
+    except socket.error as socket_error:
+        print "Socket Error: %s" % socket_error
+        sys.exit()
     return ftp_socket
 
 
@@ -52,8 +53,13 @@ def listen(ftp_socket):
     :type ftp_socket socket.socket
     """
     while 1:
-        print "Accepted connection from client"
+        connection, address = ftp_socket.accept()
+        print "Accepted connection from %s" % str(address)
+        connection.send("Thanks for connection. Bye.")
+        connection.close()
         break
+
+    # close our host socket
     ftp_socket.close()
 
 
