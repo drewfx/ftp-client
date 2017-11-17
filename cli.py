@@ -13,6 +13,7 @@
 # Import modules
 import socket
 import sys
+import FtpInterface as FtpInterface
 
 
 def run(cli_args):
@@ -20,8 +21,16 @@ def run(cli_args):
     Listen for client connections.
     :type cli_args user input arguments
     """
+    # get our address and port from input, or throw error
     address, port = get_server_parameters(cli_args)
+    # initialize the ftp command connection
+    try:
+        FtpInterface.FtpInterface().cmdloop()
+    except Exception as e:
+        print e
     initialize_command_connection(address, port)
+    # command structure for client
+    handle_client_requests()
 
 
 def get_server_parameters(cli_args):
@@ -80,6 +89,15 @@ def initialization_prompt():
     sys.exit(message)
 
 
+def handle_client_requests():
+    """"""
+    print "1"
+    FtpInterface.FtpInterface().cmdloop("instantiate")
+
+
 # Run
 if __name__ == '__main__':
-    run(sys.argv)
+    interface = FtpInterface.FtpInterface()
+    interface.cmdloop()
+
+    # run(sys.argv)
