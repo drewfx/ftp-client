@@ -1,4 +1,16 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# title           :cli.py
+# description     :Client side operations of local FTP server
+# author          :Andrew Ruppel
+# date            :11/26/2017
+# version         :0.1
+# usage           :python cli.py <address/ip> <port>
+# notes           :
+# python_version  :2.7.12
+##############################
+
+# Import modules
 import socket
 import sys
 

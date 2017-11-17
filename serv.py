@@ -1,4 +1,16 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# title           :serv.py
+# description     :Server side operations of local FTP server
+# author          :Andrew Ruppel
+# date            :11/26/2017
+# version         :0.1
+# usage           :python serv.py <port>
+# notes           :
+# python_version  :2.7.12
+##############################
+
+# Import modules
 import socket
 import sys
 import commands
