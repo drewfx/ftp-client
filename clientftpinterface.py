@@ -19,6 +19,7 @@ from os import system
 class ClientFtpInterface(Cmd):
     """Simple FTP prompt for client"""
 
+    socket = ''
     prompt = "ftp> "
     intro = "Type: 'help' for a list of commands"
 
@@ -84,3 +85,6 @@ class ClientFtpInterface(Cmd):
               "\n  -Description: %s" \
               "\n  -Example: %s" % (command, description, example)
         print msg
+
+    def store(self, socket):
+        self.socket = socket

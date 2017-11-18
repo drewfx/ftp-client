@@ -24,9 +24,9 @@ def run(cli_args):
     # get our address and port from input, or throw error
     address, port = get_server_parameters(cli_args)
     # initialize the ftp command connection
-    initialize_command_connection(address, port)
+    command_socket = initialize_command_connection(address, port)
     # command structure for client
-    handle_client_requests()
+    handle_client_requests(command_socket)
 
 
 def get_server_parameters(cli_args):
@@ -76,6 +76,14 @@ def initialize_command_connection(server_address, server_port):
     return ftp_cmd_socket
 
 
+def handle_client_requests(command_socket=None):
+    """Handle all client related queries to the host"""
+    if command_socket is not None:
+        ftp_interface = ClientFtpInterface()
+        ftp_interface.store(command_socket)
+        ftp_interface.cmdloop()
+
+
 def initialization_prompt():
     """Print initialization prompt in case too few arguments passed"""
     message = "\nUsage: python cli.py <server address> <server port>" \
@@ -85,13 +93,6 @@ def initialization_prompt():
     sys.exit(message)
 
 
-def handle_client_requests():
-    """"""
-    print "1"
-    ClientFtpInterface().cmdloop()
-
-
 # Run
 if __name__ == '__main__':
-    # ClientFtpInterface().cmdloop()
     run(sys.argv)
