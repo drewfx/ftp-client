@@ -1,6 +1,6 @@
 # Ignore file storage
-./_client_uploads
-./_client_downloads
+./_client_uploads/
+./_client_downloads/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
