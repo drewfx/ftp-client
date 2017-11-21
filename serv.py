@@ -13,7 +13,8 @@
 # Import modules
 import socket
 import sys
-import commands
+from constants import ACCEPTED_COMMANDS
+from hostftpinterface import HostOperations
 
 
 def run(cli_args):
@@ -40,7 +41,7 @@ def check_input(cli_args):
             sys.exit("Argument Exception: You are missing the socket parameter.\n")
         if arg_length > 2:
             sys.exit("Argument Exception: Your arguments exceed the the required parameters.\n")
-        initialization_prompt()
+        help_initialization_prompt()
 
 
 def initialize(port):
@@ -52,7 +53,7 @@ def initialize(port):
         server_port = int(port)
         ftp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         ftp_socket.bind(('', server_port))
-        ftp_socket.listen(1)
+        ftp_socket.listen(2)
         print "Server has been initialized, listening on port %s" % str(server_port)
     except socket.error as socket_error:
         print "Socket Error: %s" % socket_error
@@ -64,31 +65,34 @@ def listen(ftp_socket):
     """Listen for clients
     :type ftp_socket socket.socket
     """
-    while 1:
-        connection, address = ftp_socket.accept()
+    while True:
+        ftp_client, address = ftp_socket.accept()
         print "Accepted connection from %s" % str(address)
-        connection.send("Thanks for connection. Bye.")
-        connection.close()
-        break
 
+        ops = HostOperations(ftp_client)
+
+        while True:
+            client_request = ftp_client.recv(1024)
+            print client_request
+
+            # check to see if the client request is a valid command
+            if client_request in ACCEPTED_COMMANDS:
+                # if we have a valid command run said command
+                if client_request == 'ls':
+                    ops.do_ls()
+                if client_request == 'put':
+                    ops.do_put()
+                if client_request == 'get':
+                    ops.do_get()
+                if client_request == 'quit':
+                    ops.do_quit()
+                    break
+            else:
+                ftp_client.send("Incorrect commands: %s" % client_request)
     # close our host socket
-    ftp_socket.close()
 
 
-def print_help():
-    """Print instructions"""
-    help = "###############################\n" \
-           "#         FTP COMMANDS        #\n" \
-           "###############################\n" \
-           "help: print help\n" \
-           "get <filename>: downloads a file <file_name>\n" \
-           "put <filename>: uploads a file <file_name>\n" \
-           "ls: lists directory\n" \
-           "quit: disconnects from the server\n"
-    print help
-
-
-def initialization_prompt():
+def help_initialization_prompt():
     """Print initialization prompt in case too few arguments passed"""
     print "Example usage: python serv.py <port number>"
 

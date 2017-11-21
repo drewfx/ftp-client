@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# title           :cli.py
+# title           :clientftpinterface.py
 # description     :FTP Interface class to handle requests and descriptions of commands
 # author          :Andrew Ruppel
 # date            :11/26/2017
 # version         :0.1
 # usage           :
-# notes           :external class utilized by cli.py
+# notes           :commands must be declared using the do_* method format to be accepted
 # python_version  :2.7.12
 ##################################################
 
@@ -36,7 +36,8 @@ class ClientFtpInterface(Cmd):
 
     def do_ls(self, args):
         """Query command for host file listing in ftp directory"""
-        return
+        response = self.make_request('ls')
+        print response
 
     def do_clear(self, args):
         """Clears the prompt"""
@@ -45,10 +46,11 @@ class ClientFtpInterface(Cmd):
 
     def do_quit(self, args):
         """Quits the program"""
-        exit("Quitting...Goodbye.")
+        response = self.make_request('quit')
+        exit(response)
 
     ################################
-    #     Command Help Methods     #
+    #    Command Helper Methods    #
     ################################
     def help_get(self):
         """Describes the get command"""
@@ -72,6 +74,9 @@ class ClientFtpInterface(Cmd):
         """Describes the quit command"""
         self.print_help_method("quit", "Quits the interface", "quit")
 
+    ################################
+    #        Utility Methods       #
+    ################################
     def emptyline(self):
         """This overrides the default action for when an emptyline is
         submitted via the prompt window.
@@ -86,5 +91,11 @@ class ClientFtpInterface(Cmd):
               "\n  -Example: %s" % (command, description, example)
         print msg
 
-    def store(self, socket):
+    def store_cmd_socket(self, socket):
         self.socket = socket
+
+    def make_request(self, cmd):
+        """Send request to host"""
+        self.socket.send(cmd)
+        response = self.socket.recv(1024)
+        return response

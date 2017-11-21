@@ -67,7 +67,6 @@ def initialize_command_connection(server_address, server_port):
     try:
         ftp_cmd_socket.connect((server_address, server_port))
         print "\nConnection to server has been established on port %s ." % server_port
-        print ftp_cmd_socket.recv(1024)
     except socket.error as socket_error:
         print "Socket Error: %s" % socket_error
         sys.exit()
@@ -79,8 +78,9 @@ def initialize_command_connection(server_address, server_port):
 def handle_client_requests(command_socket=None):
     """Handle all client related queries to the host"""
     if command_socket is not None:
+        # Create our client interface and store cmd socket
         ftp_interface = ClientFtpInterface()
-        ftp_interface.store(command_socket)
+        ftp_interface.store_cmd_socket(command_socket)
         ftp_interface.cmdloop()
 
 
