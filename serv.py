@@ -13,7 +13,7 @@
 # Import modules
 import socket
 import sys
-from constants import ACCEPTED_COMMANDS
+import constants as const
 from hostftpinterface import HostOperations
 
 
@@ -58,6 +58,8 @@ def initialize(port):
     except socket.error as socket_error:
         print "Socket Error: %s" % socket_error
         sys.exit()
+    except IOError as e:
+        print
     return ftp_socket
 
 
@@ -72,21 +74,20 @@ def listen(ftp_socket):
         ops = HostOperations(ftp_client)
 
         while True:
-            client_request = ftp_client.recv(1024)
-            print client_request
+            client_request = ftp_client.recv(const.BUFFER_SIZE)
+            client_command = client_request.split(" ")[0]
 
             # check to see if the client request is a valid command
-            if client_request in ACCEPTED_COMMANDS:
+            if client_command in const.ACCEPTED_COMMANDS:
                 # if we have a valid command run said command
-                if client_request == 'ls':
+                if client_request == const.COMMAND_LS:
                     ops.do_ls()
-                if client_request == 'put':
-                    ops.do_put()
-                if client_request == 'get':
-                    ops.do_get()
-                if client_request == 'quit':
+                if client_request == const.COMMAND_PUT:
+                    ops.do_put(client_request)
+                if client_request == const.COMMAND_GET:
+                    ops.do_get(client_request)
+                if client_request == const.COMMAND_QUIT:
                     ops.do_quit()
-                    break
             else:
                 ftp_client.send("Incorrect commands: %s" % client_request)
     # close our host socket

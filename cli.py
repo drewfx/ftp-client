@@ -76,7 +76,9 @@ def initialize_command_connection(server_address, server_port):
 
 
 def handle_client_requests(command_socket=None):
-    """Handle all client related queries to the host"""
+    """Handle all client related queries to the host
+    :type command_socket socket._socketobject
+    """
     if command_socket is not None:
         # Create our client interface and store cmd socket
         ftp_interface = ClientFtpInterface()

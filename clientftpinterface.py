@@ -14,6 +14,9 @@
 from cmd import Cmd
 from sys import exit
 from os import system
+import constants as const
+import re
+import os.path
 
 
 class ClientFtpInterface(Cmd):
@@ -28,15 +31,23 @@ class ClientFtpInterface(Cmd):
     ################################
     def do_get(self, args):
         """Get command structure for downloading a file form the host"""
-        return
+        filename = self.get_file_name(args)
+
+        # loop to get file from server
+        if filename:
+            self.socket.send("%s %s" % (const.COMMAND_GET, filename))
+            self.receive_file()
+        else:
+            print "Incorrect usage, type 'help' for formatting."
 
     def do_put(self, args):
         """Put command structure for uploading a file to the host"""
-        return
+        response = self.make_request(const.COMMAND_PUT)
+        print response
 
     def do_ls(self, args):
         """Query command for host file listing in ftp directory"""
-        response = self.make_request('ls')
+        response = self.make_request(const.COMMAND_LS)
         print response
 
     def do_clear(self, args):
@@ -46,7 +57,7 @@ class ClientFtpInterface(Cmd):
 
     def do_quit(self, args):
         """Quits the program"""
-        response = self.make_request('quit')
+        response = self.make_request(const.COMMAND_QUIT)
         exit(response)
 
     ################################
@@ -95,7 +106,58 @@ class ClientFtpInterface(Cmd):
         self.socket = socket
 
     def make_request(self, cmd):
-        """Send request to host"""
+        """Send request to server"""
         self.socket.send(cmd)
-        response = self.socket.recv(1024)
+        response = self.socket.recv(const.BUFFER_SIZE)
         return response
+
+    def get_file_name(self, args):
+        """Gets filename from input string
+        :type args string
+        :rtype regex match substring
+        """
+        reg = re.compile("(\w*\.\w*)")
+        match = reg.match(args)
+        if match:
+            return match.group()
+        else:
+            return None
+
+    def receive_file(self):
+        """Receive file from the server"""
+        header = self.receive_bytes(10)
+        file_size = int(header)
+        print "Receiving... %d of data." % file_size
+        file_data = self.receive_bytes(file_size)
+        # TODO: handle file f = open(filename, 'wb')
+
+
+    def send_file(self):
+        """Send file to the server"""
+
+    def receive_bytes(self, size=None):
+        """Receives size number of bytes from server
+        :type size integer
+        :rtype received string
+        """
+        # if a size is passed
+        if size:
+            # initialize local vars
+            temp_buffer = ""
+            received = ""
+
+            # read input
+            while len(temp_buffer) < size:
+                temp_buffer = self.socket.recv(size)
+
+                # if nothing returns
+                if not temp_buffer:
+                    print "Error: no bytes received from server."
+                    break
+
+                # add to received
+                received += temp_buffer
+
+            return received
+        else:
+            print "Error: receive size error."
