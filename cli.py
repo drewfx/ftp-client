@@ -26,7 +26,7 @@ def run(cli_args):
     # initialize the ftp command connection
     command_socket = initialize_command_connection(address, port)
     # command structure for client
-    handle_client_requests(command_socket)
+    handle_client_requests(address, command_socket)
 
 
 def get_server_parameters(cli_args):
@@ -54,35 +54,26 @@ def initialize_command_connection(server_address, server_port):
     :type server_port string
     :rtype ftp_socket socket._socketobject
     """
+    # convert port to integer
     server_port = int(server_port)
 
-    # try-except to create socket
-    try:
-        ftp_cmd_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    except socket.error as socket_error:
-        print "Socket Error: %s" % socket_error
-        sys.exit()
-
-    # try-except to establish connection to the host machine
-    try:
-        ftp_cmd_socket.connect((server_address, server_port))
-        print "\nConnection to server has been established on port %s ." % server_port
-    except socket.error as socket_error:
-        print "Socket Error: %s" % socket_error
-        sys.exit()
+    # create command socket
+    ftp_interface = ClientFtpInterface()
+    ftp_cmd_socket = ftp_interface.create_socket(server_address, server_port)
 
     # return our Command socket if successful
     return ftp_cmd_socket
 
 
-def handle_client_requests(command_socket=None):
+def handle_client_requests(host_address, command_socket=None):
     """Handle all client related queries to the host
+    :type host_address int
     :type command_socket socket._socketobject
     """
     if command_socket is not None:
         # Create our client interface and store cmd socket
         ftp_interface = ClientFtpInterface()
-        ftp_interface.store_cmd_socket(command_socket)
+        ftp_interface.store_host_details(host_address, command_socket)
         ftp_interface.cmdloop()
 
 

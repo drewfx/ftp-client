@@ -10,6 +10,8 @@
 # python_version  :2.7.12
 ##############################
 
+SOCKET_TIMEOUT = 10
+
 FILE_SEPARATOR = '/'
 
 # Commands
@@ -28,3 +30,4 @@ CLIENT_UPLOAD_FOLDER = './_client_uploads'
 # Buffer Constant for sockets
 HEADER_SIZE = 10
 BUFFER_SIZE = 4096
+FILENAME_SIZE = 30

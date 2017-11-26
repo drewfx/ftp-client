@@ -53,14 +53,14 @@ def initialize(port):
         server_port = int(port)
         ftp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         ftp_socket.bind(('', server_port))
-        ftp_socket.listen(2)
+        ftp_socket.listen(1)
         print "Server has been initialized, listening on port %s" % str(server_port)
-    except socket.error as socket_error:
-        print "Socket Error: %s" % socket_error
+        return ftp_socket
+    except socket.error as e:
+        print "Socket Error: %s" % e
         sys.exit()
     except IOError as e:
-        print
-    return ftp_socket
+        print "IO Error: %s" % e
 
 
 def listen(ftp_socket):
@@ -71,30 +71,34 @@ def listen(ftp_socket):
         ftp_client, address = ftp_socket.accept()
         print "Accepted connection from %s" % str(address)
 
-        ops = HostOperations(ftp_client)
+        ops = HostOperations(ftp_client, ftp_socket)
 
         while True:
-            client_request = ftp_client.recv(const.BUFFER_SIZE)
-            client_command = client_request.split(" ")[0]
+            try:
+                client_request = ftp_client.recv(const.BUFFER_SIZE)
+                client_command = client_request.split('|')[0]
+            except socket.error as e:
+                print "Socket Error: %s, continuing" % e
+                break
 
             # check to see if the client request is a valid command
             if client_command in const.ACCEPTED_COMMANDS:
                 # if we have a valid command run said command
-                if client_request == const.COMMAND_LS:
+                if client_command == const.COMMAND_LS:
                     ops.do_ls()
-                if client_request == const.COMMAND_PUT:
+                if client_command == const.COMMAND_PUT:
                     ops.do_put(client_request)
-                if client_request == const.COMMAND_GET:
+                if client_command == const.COMMAND_GET:
                     ops.do_get(client_request)
-                if client_request == const.COMMAND_QUIT:
+                if client_command == const.COMMAND_QUIT:
                     ops.do_quit()
             else:
-                ftp_client.send("Incorrect commands: %s" % client_request)
+                ftp_client.send("Incorrect commands: %s" % client_command)
     # close our host socket
 
 
 def help_initialization_prompt():
-    """Print initialization prompt in case too few arguments passed"""
+    """Print initialization prompt in case too few/many arguments passed"""
     print "Example usage: python serv.py <port number>"
 
 

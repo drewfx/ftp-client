@@ -20,11 +20,13 @@ from commands import getstatusoutput
 class HostOperations:
     """Perform server side actions such as list dir, put/get file"""
 
-    def __init__(self, client_socket):
+    def __init__(self, client_socket, host_socket):
         """Initialize with client socket
         :type client_socket socket._socketobject
+        :type host_socket socket._socketobject
         """
         self.client_socket = client_socket
+        self.host_socket = host_socket
 
     ################################
     #        Command Methods       #
@@ -33,12 +35,14 @@ class HostOperations:
         """Op method for sending a file to the client
         :type request string
         """
-        filename = self.get_file_name(request)
-        exists = os.path.isfile("%s%s%s" % (const.CLIENT_UPLOAD_FOLDER, const.FILE_SEPARATOR, filename))
+        # get file name, check if exists at path
+        file_name = request.split('|')[1]
+        file_path = "%s%s%s" % (const.CLIENT_UPLOAD_FOLDER, const.FILE_SEPARATOR, file_name)
+        exists = os.path.isfile(file_path)
 
-        if filename and exists:
+        if file_name and exists:
             # Send file and flag success
-            self.send_file(filename)
+            self.send_file(file_name, file_path)
             self.op_success_message(const.COMMAND_GET)
         else:
             # Send error message back to client if no file exists
@@ -49,7 +53,7 @@ class HostOperations:
         """Op method for receiving a file from the client
         :type request string
         """
-        self.client_socket.send("PUT")
+        self.receive_file()
 
     def do_ls(self):
         """Perform directory listing and return results"""
@@ -76,30 +80,105 @@ class HostOperations:
     ################################
     def receive_file(self):
         """Receive the file from the client and upload to folder"""
-        # TODO:
-        return
+        try:
+            transfer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            transfer_socket.bind(('', 0))
+            transfer_socket.listen(1)
+            transfer_port = transfer_socket.getsockname()[1]
+            transfer_port = self.buffer_header(transfer_port)
+        except socket.error as e:
+            print e
+            return
 
-    def send_file(self, filename):
+        # send transfer port to client
+        try:
+            self.client_socket.send(transfer_port)
+        except socket.error as e:
+            self.op_failure_message(const.COMMAND_GET)
+            return
+
+        while True:
+            ftp_transfer_socket, address = transfer_socket.accept()
+            print "Accepted connection from %s" % str(address)
+
+            if ftp_transfer_socket:
+                # file name header handling
+                file_name_header = self.receive_bytes(ftp_transfer_socket, const.FILENAME_SIZE)
+                file_name = file_name_header.translate(None, '0')
+                # file size header handling
+                file_size_header = self.receive_bytes(ftp_transfer_socket, const.HEADER_SIZE)
+                file_size = int(file_size_header)
+                # file data handling
+                file_data = self.receive_bytes(ftp_transfer_socket, file_size)
+
+                # calculate potential home of file in _client_uploads
+                file_path = "%s%s%s" % (const.CLIENT_UPLOAD_FOLDER, const.FILE_SEPARATOR, file_name)
+
+                # allocate file data
+                transfer_file = open(file_path, 'w')
+                transfer_file.write(file_data)
+                transfer_file.close()
+                transfer_socket.close()
+                self.op_success_message(const.COMMAND_PUT)
+                return
+
+    def send_file(self, file_name, file_path):
         """Get file from host and send to client
-        :type filename string
+        :type file_name string
+        :type file_path string
         """
         # use with to ensure file is closed after ops
-        with open(filename, 'rb') as file_object:
-            # byte counter
-            bytes_sent = 0
-            # file data
-            data = file_object.read()
-            # header with count of bytes in file
-            header = self.buffer_header(data)
-            # prepend the header
-            file_data = header + data
+        with open(file_path, 'r') as file_object:
+            # establish ephemeral port
+            transfer_port = ''
 
-            while len(file_data) > bytes_sent:
-                try:
-                    bytes_sent += self.client_socket.send(file_data[bytes_sent:])
+            # read file, put file size in padded header, prepend header to data
+            data = file_object.read()
+
+            try:
+                transfer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                transfer_socket.bind(('', 0))
+                transfer_socket.listen(1)
+                transfer_port = transfer_socket.getsockname()[1]
+                transfer_port = self.buffer_header(transfer_port)
+            except socket.error as e:
+                print e
+                self.op_failure_message(const.COMMAND_GET)
+                return
+
+            # send transfer port to client
+            try:
+                self.client_socket.send(transfer_port)
+            except socket.error as e:
+                self.op_failure_message(const.COMMAND_GET)
+                return
+
+            while True:
+                print "Listening on %s" % transfer_port
+                ftp_transfer, address = transfer_socket.accept()
+                print "Accepted connection from %s" % str(address)
+
+                if ftp_transfer:
+                    # byte counter
+                    bytes_sent = 0
+
+                    file_name_header = self.buffer_header(file_name, const.FILENAME_SIZE)
+                    file_size_header = self.buffer_header(str(len(data)), const.HEADER_SIZE)
+
+                    file_data = file_name_header + file_size_header + data
+
+                    while len(file_data) > bytes_sent:
+                        try:
+                            bytes_sent += ftp_transfer.send(file_data[bytes_sent:])
+                        except socket.error as e:
+                            print e
+                            self.op_failure_message(const.COMMAND_GET)
+                            return
+
                     self.op_success_message(const.COMMAND_GET)
-                except socket.error as e:
-                    self.op_failure_message(const.COMMAND_GET)
+                    ftp_transfer.close()
+                    transfer_socket.close()
+                    return
 
     def op_success_message(self, command):
         """Print success message"""
@@ -109,24 +188,41 @@ class HostOperations:
         """Print failure message"""
         print "FAILURE: executing %s" % command
 
-    def get_file_name(self, client_request):
-        """Gets filename from input string
-        :type client_request string
-        :rtype regex match substring
+    def receive_bytes(self, sock, size=None):
+        """Receives size number of bytes from server
+        :type sock socket.socketobject
+        :type size integer
+        :rtype received string
         """
-        reg = re.compile("(\w*\.\w*)")
-        match = reg.match(client_request)
-        if match:
-            return match.group()
-        else:
-            return None
+        # if a size is passed
+        if sock and size:
+            # initialize local vars
+            temp_buffer = ""
+            received = ""
 
-    def buffer_header(self, header):
+            # read input
+            while len(temp_buffer) < size:
+                temp_buffer = sock.recv(size)
+
+                # if nothing returns
+                if not temp_buffer:
+                    print "Error: no bytes received from server."
+                    break
+
+                # add to received
+                received += temp_buffer
+
+            return received
+        else:
+            print "Error: receive size error."
+
+    def buffer_header(self, header, size=10):
         """Buffer the header of a file transfer or response
         :type header string
+        :type size int
         :rtype data_size string (padded)
         """
-        data_size = str(len(header))
-        while len(data_size) < 10:
-            data_size = "0" + data_size
-        return data_size
+        header = str(header)
+        while len(header) < size:
+            header = "0" + header
+        return header
