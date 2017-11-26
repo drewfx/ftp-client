@@ -38,6 +38,10 @@ Tested Methods:
 * help - lists help guide for commands 'help' or 'help <command>'
 * quit - exits (client only)
 
+GET will 'download' a file to ```_client_downloads``` from the server.
+
+PUT will 'upload' a file to ```_client_uploads``` to the server.
+
 Has handled most errors that have occurred, although streamlining the error handling for the sockets could definitely be improved and overall, the structure could be more modular.
 
 ### Notes
