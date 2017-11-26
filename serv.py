@@ -78,7 +78,7 @@ def listen(ftp_socket):
                 client_request = ftp_client.recv(const.BUFFER_SIZE)
                 client_command = client_request.split('|')[0]
             except socket.error as e:
-                print "Socket Error: %s, continuing" % e
+                print "Client disconnect, handled error and continuing: %s" % e
                 break
 
             # check to see if the client request is a valid command
